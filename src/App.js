@@ -8,8 +8,21 @@ import Password from './pages/Password';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 
+// Páginas Administrativas
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import CardBlocking from './pages/admin/CardBlocking';
+import CardList from './pages/admin/CardList';
+import Billing from './pages/admin/Billing';
+import CardRequest from './pages/admin/CardRequest';
+import TransactionDetails from './pages/admin/TransactionDetails';
+
+// Layouts
+import AdminLayout from './layouts/AdminLayout';
+
 // Componentes
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
 
 // Contexto
 import { AuthProvider } from './context/AuthContext';
@@ -157,18 +170,35 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            {/* Rutas públicas */}
+            {/* Rutas públicas de clientes */}
             <Route path="/login" element={<Login />} />
             <Route path="/password" element={<Password />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             
-            {/* Rutas protegidas */}
+            {/* Rutas protegidas de clientes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              {/* Aquí puedes agregar más rutas protegidas según sea necesario */}
+              {/* Otras rutas de clientes */}
             </Route>
             
-            {/* Redirección por defecto */}
+            {/* Rutas administrativas */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            
+            {/* Rutas protegidas administrativas con layout compartido */}
+            <Route element={<AdminProtectedRoute />}>
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="card-list" element={<CardList />} />
+                <Route path="card-blocking" element={<CardBlocking />} />
+                <Route path="card-request" element={<CardRequest />} />
+                <Route path="billing" element={<Billing />} />
+                <Route path="transaction/:id" element={<TransactionDetails />} />
+              </Route>
+            </Route>
+            
+            {/* Redirecciones por defecto */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Router>

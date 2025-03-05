@@ -172,7 +172,6 @@ const Dashboard = () => {
       expiryDate: '05/25',
       paymentDate: '25/06/2023',
       cutoffDate: '10/06/2023',
-      minimumPayment: 180.50,
       transactions: [
         { 
           id: 1, 
@@ -210,7 +209,6 @@ const Dashboard = () => {
       expiryDate: '12/26',
       paymentDate: '20/06/2023',
       cutoffDate: '05/06/2023',
-      minimumPayment: 120.00,
       transactions: [
         { 
           id: 1, 
@@ -535,7 +533,6 @@ const Dashboard = () => {
                     </CardContent>
                     <CardActions>
                       <Button size="small" startIcon={<Payment />}>Ver Movimientos</Button>
-                      <Button size="small" startIcon={<Receipt />}>Estado de Cuenta</Button>
                     </CardActions>
                   </Card>
                 </Grid>
@@ -575,7 +572,7 @@ const Dashboard = () => {
                         {card.type}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        N° de tarjeta: {card.number} | Vence: {card.expiryDate}
+                        N° de tarjeta: {card.number}
                       </Typography>
                       
                       <Grid container spacing={2}>
@@ -629,10 +626,6 @@ const Dashboard = () => {
                         <Box>
                           <Typography variant="caption" color="text.secondary">Fecha de pago</Typography>
                           <Typography variant="body2" fontWeight="medium">{card.paymentDate}</Typography>
-                        </Box>
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">Pago mínimo</Typography>
-                          <Typography variant="body2" fontWeight="medium">{formatCurrency(card.minimumPayment)}</Typography>
                         </Box>
                       </Box>
                     </CardContent>
@@ -947,10 +940,6 @@ const Dashboard = () => {
                   <Grid item xs={4}>
                     <Typography variant="caption">Fecha de pago</Typography>
                     <Typography variant="body1" fontWeight="bold">{selectedCard.paymentDate}</Typography>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <Typography variant="caption">Pago mínimo</Typography>
-                    <Typography variant="body1" fontWeight="bold">{formatCurrency(selectedCard.minimumPayment)}</Typography>
                   </Grid>
                 </Grid>
               </Box>

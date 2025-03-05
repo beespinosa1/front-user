@@ -719,7 +719,6 @@ const AccountManagement = () => {
                           <TableCell>Número de Tarjeta</TableCell>
                           <TableCell>Titular</TableCell>
                           <TableCell>Fecha Emisión</TableCell>
-                          <TableCell>Fecha Expiración</TableCell>
                           <TableCell>Estado</TableCell>
                         </TableRow>
                       </TableHead>
@@ -729,7 +728,6 @@ const AccountManagement = () => {
                             <TableCell>{card.numeroTarjeta}</TableCell>
                             <TableCell>{card.titular}</TableCell>
                             <TableCell>{card.fechaEmision}</TableCell>
-                            <TableCell>{card.fechaExpiracion}</TableCell>
                             <TableCell>
                               <Chip 
                                 label={card.estado} 

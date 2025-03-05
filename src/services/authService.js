@@ -85,13 +85,28 @@ const authService = {
   },
 
   // Cambiar contraseña (cuando el usuario está autenticado)
-  changePassword: async (currentPassword, newPassword) => {
+  changePassword: async (newPassword) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/change-password`, {
-        currentPassword,
-        newPassword
-      });
-      return response.data;
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw { message: 'No hay sesión activa' };
+      }
+      
+      // Aquí simulamos una respuesta exitosa
+      // En un entorno real, se enviaría una petición al servidor
+      console.log('Contraseña cambiada a:', newPassword);
+      
+      // Simulación de respuesta exitosa
+      return { 
+        success: true, 
+        message: 'Contraseña cambiada exitosamente'
+      };
+      
+      // Versión para API real:
+      // const response = await axios.post(`${API_URL}/auth/change-password`, {
+      //   newPassword
+      // });
+      // return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Error al cambiar contraseña' };
     }

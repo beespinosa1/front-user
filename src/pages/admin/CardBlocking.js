@@ -29,6 +29,7 @@ import {
   Tooltip,
   Alert,
   LinearProgress,
+  Snackbar,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -39,6 +40,9 @@ import {
   Warning as WarningIcon,
   Person as PersonIcon,
   Report as ReportIcon,
+  CheckCircle as CheckCircleIcon,
+  RemoveCircle as RemoveCircleIcon,
+  Help as HelpIcon,
 } from '@mui/icons-material';
 
 // Importar el servicio
@@ -52,11 +56,12 @@ const CardBlocking = () => {
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [unblockDialogOpen, setUnblockDialogOpen] = useState(false);
   const [blockReason, setBlockReason] = useState('');
-  const [temporaryBlock, setTemporaryBlock] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState('success');
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [cardToUnblock, setCardToUnblock] = useState(null);
 
   // Cargar tarjetas al iniciar
   useEffect(() => {
@@ -91,72 +96,82 @@ const CardBlocking = () => {
   const handleSelectCardToBlock = (card) => {
     setSelectedCard(card);
     setBlockDialogOpen(true);
+    setBlockReason('');
   };
 
   const handleBlockReasonChange = (event) => {
     setBlockReason(event.target.value);
   };
 
-  const handleTemporaryBlockChange = (event) => {
-    setTemporaryBlock(event.target.checked);
-  };
-
   const handleCloseBlockDialog = () => {
     setBlockDialogOpen(false);
+    setSelectedCard(null);
     setBlockReason('');
-    setTemporaryBlock(false);
   };
 
   const handleConfirmBlock = async () => {
-    setIsLoading(true);
+    if (!selectedCard || !blockReason) return;
+    
     try {
-      // Dependiendo del tipo de bloqueo, llamamos a inactivar o bloquear
-      if (temporaryBlock) {
-        // Bloqueo temporal (por seguridad)
-        await adminTarjetaService.bloquearTarjeta(selectedCard.id);
-      } else {
-        // Bloqueo permanente (inactivación)
-        await adminTarjetaService.inactivarTarjeta(selectedCard.id);
-      }
+      // Aquí iría la llamada al API para bloquear la tarjeta
+      // adminTarjetaService.bloquearTarjeta(selectedCard.id, blockReason);
       
-      // Actualizar la interfaz después del bloqueo
-      fetchCards();
+      // Simulamos el bloqueo:
+      const updatedActiveCards = activeCards.filter(card => card.id !== selectedCard.id);
       
+      const blockedCard = {
+        ...selectedCard,
+        estado: 'BLOQUEADA'
+      };
+      
+      setActiveCards(updatedActiveCards);
+      setBlockedCards([blockedCard, ...blockedCards]);
+      
+      showAlert(`Tarjeta de ${selectedCard.titular} bloqueada correctamente`, 'success');
+      
+      // Cerramos el diálogo
       handleCloseBlockDialog();
-      showAlert(`La tarjeta ${selectedCard.numeroTarjeta} ha sido bloqueada exitosamente.`, 'success');
     } catch (error) {
       console.error('Error al bloquear tarjeta:', error);
-      showAlert('Error al bloquear la tarjeta. Por favor, intente nuevamente.', 'error');
-    } finally {
-      setIsLoading(false);
+      showAlert('Error al bloquear la tarjeta. Intente nuevamente.', 'error');
     }
   };
 
   const handleUnblockCard = (card) => {
-    setSelectedCard(card);
+    setCardToUnblock(card);
     setUnblockDialogOpen(true);
   };
 
   const handleCloseUnblockDialog = () => {
     setUnblockDialogOpen(false);
+    setCardToUnblock(null);
   };
 
   const handleConfirmUnblock = async () => {
-    setIsLoading(true);
+    if (!cardToUnblock) return;
+    
     try {
-      // Activar la tarjeta
-      await adminTarjetaService.activarTarjeta(selectedCard.id);
+      // Aquí iría la llamada al API para desbloquear la tarjeta
+      // adminTarjetaService.desbloquearTarjeta(cardToUnblock.id);
       
-      // Actualizar la interfaz después de activar
-      fetchCards();
+      // Simulamos el desbloqueo:
+      const updatedBlockedCards = blockedCards.filter(card => card.id !== cardToUnblock.id);
       
+      const unblockedCard = {
+        ...cardToUnblock,
+        estado: 'ACTIVA'
+      };
+      
+      setBlockedCards(updatedBlockedCards);
+      setActiveCards([...activeCards, unblockedCard]);
+      
+      showAlert(`Tarjeta de ${cardToUnblock.titular} desbloqueada correctamente`, 'success');
+      
+      // Cerramos el diálogo
       handleCloseUnblockDialog();
-      showAlert(`La tarjeta ${selectedCard.numeroTarjeta} ha sido desbloqueada exitosamente.`, 'success');
     } catch (error) {
       console.error('Error al desbloquear tarjeta:', error);
-      showAlert('Error al desbloquear la tarjeta. Por favor, intente nuevamente.', 'error');
-    } finally {
-      setIsLoading(false);
+      showAlert('Error al desbloquear la tarjeta. Intente nuevamente.', 'error');
     }
   };
 
@@ -164,6 +179,7 @@ const CardBlocking = () => {
     setAlertMessage(message);
     setAlertType(type);
     setShowSuccessAlert(true);
+    setAlertOpen(true);
     
     // Ocultar la alerta después de 5 segundos
     setTimeout(() => {
@@ -184,6 +200,39 @@ const CardBlocking = () => {
     card.tipo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Obtener color según estado
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'ACTIVA':
+        return 'success';
+      case 'INACTIVA':
+        return 'default';
+      case 'BLOQUEADA':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  // Obtener ícono según estado
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'ACTIVA':
+        return <CheckCircleIcon />;
+      case 'BLOQUEADA':
+        return <BlockIcon />;
+      case 'INACTIVA':
+        return <RemoveCircleIcon />;
+      default:
+        return <HelpIcon />;
+    }
+  };
+
+  // Cerrar alerta
+  const handleCloseAlert = () => {
+    setAlertOpen(false);
+  };
+
   return (
     <Box>
       {isLoading && <LinearProgress sx={{ mb: 2 }} />}
@@ -200,7 +249,7 @@ const CardBlocking = () => {
 
       {/* Tarjetas de resumen */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6}>
           <Card sx={{ height: '100%', boxShadow: 2 }}>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
@@ -210,27 +259,12 @@ const CardBlocking = () => {
                 {blockedCards.length}
               </Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
-                Por robo, pérdida o fraude
+                Inactivas o bloqueadas
               </Typography>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ height: '100%', boxShadow: 2 }}>
-            <CardContent>
-              <Typography color="text.secondary" gutterBottom>
-                Bloqueos Temporales
-              </Typography>
-              <Typography variant="h4" component="div" fontWeight="bold" color="warning.main">
-                {blockedCards.filter(card => card.isTemporary).length}
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Por medidas de prevención
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6}>
           <Card sx={{ height: '100%', bgcolor: 'primary.main', color: 'white', boxShadow: 2 }}>
             <CardContent>
               <Typography sx={{ opacity: 0.8 }} gutterBottom>
@@ -299,11 +333,7 @@ const CardBlocking = () => {
               <TableRow>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Número de Tarjeta</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Titular</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>ID Cliente</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Bloqueo</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Motivo</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Solicitante</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Tipo</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Estado</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Acciones</TableCell>
               </TableRow>
             </TableHead>
@@ -312,25 +342,11 @@ const CardBlocking = () => {
                 <TableRow key={card.id} hover>
                   <TableCell>{card.numeroTarjeta}</TableCell>
                   <TableCell>{card.titular}</TableCell>
-                  <TableCell>{card.idCliente}</TableCell>
-                  <TableCell>{card.fechaBloqueo}</TableCell>
                   <TableCell>
                     <Chip 
-                      icon={card.motivo === 'Fraude' ? <WarningIcon /> : <ReportIcon />}
-                      label={card.motivo} 
-                      color={
-                        card.motivo === 'Fraude' ? 'error' : 
-                        card.motivo === 'Prevención' ? 'warning' : 
-                        'default'
-                      } 
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{card.solicitante}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={card.isTemporary ? 'Temporal' : 'Permanente'} 
-                      color={card.isTemporary ? 'warning' : 'error'} 
+                      icon={getStatusIcon(card.estado)}
+                      label={card.estado} 
+                      color={getStatusColor(card.estado)} 
                       size="small"
                     />
                   </TableCell>
@@ -395,33 +411,20 @@ const CardBlocking = () => {
             </Box>
           )}
           
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Motivo de bloqueo</InputLabel>
+          <FormControl fullWidth>
+            <InputLabel id="block-reason-label">Motivo de bloqueo</InputLabel>
             <Select
+              labelId="block-reason-label"
               value={blockReason}
-              onChange={handleBlockReasonChange}
+              onChange={(e) => setBlockReason(e.target.value)}
               label="Motivo de bloqueo"
-              required
             >
-              <MenuItem value="">Seleccione un motivo</MenuItem>
-              <MenuItem value="Robo">Robo</MenuItem>
-              <MenuItem value="Pérdida">Pérdida</MenuItem>
-              <MenuItem value="Fraude">Fraude</MenuItem>
-              <MenuItem value="Prevención">Prevención</MenuItem>
-              <MenuItem value="Solicitud del cliente">Solicitud del cliente</MenuItem>
-            </Select>
-          </FormControl>
-          
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Tipo de bloqueo</InputLabel>
-            <Select
-              value={temporaryBlock}
-              onChange={handleTemporaryBlockChange}
-              label="Tipo de bloqueo"
-              required
-            >
-              <MenuItem value={false}>Permanente</MenuItem>
-              <MenuItem value={true}>Temporal</MenuItem>
+              <MenuItem value="FRAUDE">Fraude detectado</MenuItem>
+              <MenuItem value="ROBO">Tarjeta robada</MenuItem>
+              <MenuItem value="PERDIDA">Tarjeta perdida</MenuItem>
+              <MenuItem value="SOLICITUD_CLIENTE">Solicitud del cliente</MenuItem>
+              <MenuItem value="MORA">Mora en pagos</MenuItem>
+              <MenuItem value="OTRO">Otro</MenuItem>
             </Select>
           </FormControl>
         </DialogContent>
@@ -448,15 +451,9 @@ const CardBlocking = () => {
         <DialogTitle>Confirmar Desbloqueo de Tarjeta</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Está seguro que desea desbloquear la tarjeta <strong>{selectedCard?.numeroTarjeta}</strong> del cliente <strong>{selectedCard?.titular}</strong>?
+            ¿Está seguro que desea desbloquear la tarjeta <strong>{cardToUnblock?.numeroTarjeta}</strong> del cliente <strong>{cardToUnblock?.titular}</strong>?
+            La tarjeta volverá a estar operativa inmediatamente.
           </DialogContentText>
-          {selectedCard && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'error.light', borderRadius: 1 }}>
-              <Typography variant="body2" color="error.dark">
-                Esta acción eliminará el bloqueo por <strong>{selectedCard.motivo}</strong> y permitirá que la tarjeta sea utilizada nuevamente.
-              </Typography>
-            </Box>
-          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseUnblockDialog} color="inherit">
@@ -467,6 +464,13 @@ const CardBlocking = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Alertas */}
+      <Snackbar open={alertOpen} autoHideDuration={6000} onClose={handleCloseAlert}>
+        <Alert onClose={handleCloseAlert} severity={alertType} sx={{ width: '100%' }}>
+          {alertMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

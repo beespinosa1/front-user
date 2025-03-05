@@ -60,6 +60,7 @@ import {
   LocalAtm as LocalAtmIcon,
   Assignment as AssignmentIcon,
   Timeline as TimelineIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 
 // Importar el servicio

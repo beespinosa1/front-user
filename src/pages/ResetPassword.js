@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   TextField, 
   Button, 
@@ -9,181 +9,103 @@ import {
   Paper, 
   IconButton, 
   InputAdornment,
-  Stepper,
-  Step,
-  StepLabel
+  Alert,
+  LinearProgress
 } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { Visibility, VisibilityOff, LockReset } from '@mui/icons-material';
+import authService from '../services/authService';
 
 const ResetPassword = () => {
-  const [activeStep, setActiveStep] = useState(0);
-  const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({
-    code: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   
   const navigate = useNavigate();
-  const location = useLocation();
-  const username = location.state?.username || '';
 
-  const steps = ['Verificación', 'Nueva Contraseña', 'Confirmación'];
-
-  const handleRequestCode = () => {
-    // Aquí se enviaría la solicitud a la API para enviar un código de verificación
-    console.log('Solicitando código para:', username);
-    setActiveStep(1);
+  // Validar la fortaleza de la contraseña
+  const validatePasswordStrength = (password) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    if (password.length < minLength) {
+      return `La contraseña debe tener al menos ${minLength} caracteres`;
+    }
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      return 'La contraseña debe incluir mayúsculas, minúsculas, números y caracteres especiales';
+    }
+    
+    return '';
   };
-
-  const handleVerifyCode = () => {
-    if (!code.trim()) {
-      setErrors({...errors, code: 'Por favor ingresa el código de verificación'});
-      return;
-    }
+  
+  // Calcular la fortaleza de la contraseña (0-100)
+  const getPasswordStrength = (password) => {
+    if (!password) return 0;
     
-    // Aquí se validaría el código con la API
-    console.log('Verificando código:', code);
-    setActiveStep(2);
+    // Criterios de fortaleza
+    const criterios = [
+      password.length >= 8,                  // Mínimo 8 caracteres
+      /[A-Z]/.test(password),                // Mayúsculas
+      /[a-z]/.test(password),                // Minúsculas
+      /\d/.test(password),                   // Números
+      /[!@#$%^&*(),.?":{}|<>]/.test(password) // Caracteres especiales
+    ];
+    
+    // Calcular fortaleza (0-100)
+    const puntosPorCriterio = 100 / criterios.length;
+    const fortaleza = criterios.filter(Boolean).length * puntosPorCriterio;
+    
+    return fortaleza;
   };
-
-  const handleResetPassword = () => {
-    const newErrors = {
-      newPassword: '',
-      confirmPassword: ''
-    };
-    
-    if (!newPassword.trim()) {
-      newErrors.newPassword = 'Por favor ingresa tu nueva contraseña';
-    } else if (newPassword.length < 8) {
-      newErrors.newPassword = 'La contraseña debe tener al menos 8 caracteres';
-    }
-    
-    if (!confirmPassword.trim()) {
-      newErrors.confirmPassword = 'Por favor confirma tu nueva contraseña';
-    } else if (newPassword !== confirmPassword) {
-      newErrors.confirmPassword = 'Las contraseñas no coinciden';
-    }
-    
-    if (newErrors.newPassword || newErrors.confirmPassword) {
-      setErrors({...errors, ...newErrors});
-      return;
-    }
-    
-    // Aquí se enviaría la nueva contraseña a la API
-    console.log('Restableciendo contraseña para:', username);
-    
-    // Redirigir a la página de login después de restablecer la contraseña
-    navigate('/login', { state: { message: 'Contraseña restablecida con éxito' } });
+  
+  const getPasswordStrengthColor = (strength) => {
+    if (strength < 40) return 'error.main';
+    if (strength < 70) return 'warning.main';
+    return 'success.main';
   };
-
+  
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
   };
 
-  const getStepContent = (step) => {
-    switch (step) {
-      case 0:
-        return (
-          <Box sx={{ mt: 2 }}>
-            <Typography>
-              Se enviará un código de verificación a tu correo electrónico asociado.
-            </Typography>
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={handleRequestCode}
-              sx={{ mt: 3, mb: 2 }}
-            >
-              Solicitar Código
-            </Button>
-          </Box>
-        );
-      case 1:
-        return (
-          <Box sx={{ mt: 2 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="code"
-              label="Código de Verificación"
-              name="code"
-              autoFocus
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              error={!!errors.code}
-              helperText={errors.code}
-            />
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={handleVerifyCode}
-              sx={{ mt: 3, mb: 2 }}
-            >
-              Verificar Código
-            </Button>
-          </Box>
-        );
-      case 2:
-        return (
-          <Box sx={{ mt: 2 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="newPassword"
-              label="Nueva Contraseña"
-              type={showPassword ? 'text' : 'password'}
-              id="newPassword"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              error={!!errors.newPassword}
-              helperText={errors.newPassword}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={handleClickShowPassword}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="confirmPassword"
-              label="Confirmar Contraseña"
-              type={showPassword ? 'text' : 'password'}
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              error={!!errors.confirmPassword}
-              helperText={errors.confirmPassword}
-            />
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={handleResetPassword}
-              sx={{ mt: 3, mb: 2 }}
-            >
-              Restablecer Contraseña
-            </Button>
-          </Box>
-        );
-      default:
-        return 'Paso desconocido';
+  const handleResetPassword = async () => {
+    // Validar que las contraseñas coincidan
+    if (newPassword !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+    
+    // Validar fortaleza de la contraseña
+    const passwordError = validatePasswordStrength(newPassword);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+    
+    try {
+      // Llamar al servicio de autenticación para cambiar la contraseña
+      await authService.changePassword(newPassword);
+      
+      // Mostrar mensaje de éxito
+      setSuccess(true);
+      setError('');
+      
+      // Redirigir después de 2 segundos
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+    } catch (err) {
+      setError(err.message || 'Error al cambiar la contraseña');
     }
   };
+  
+  const passwordStrength = getPasswordStrength(newPassword);
+  const strengthColor = getPasswordStrengthColor(passwordStrength);
 
   return (
     <Container component="main" maxWidth="sm">
@@ -205,33 +127,99 @@ const ResetPassword = () => {
             width: '100%',
           }}
         >
-          <Typography component="h1" variant="h5">
-            Restablecer Contraseña
+          <LockReset color="primary" sx={{ fontSize: 40, mb: 2 }} />
+          <Typography component="h1" variant="h5" gutterBottom>
+            Cambiar Contraseña
           </Typography>
-          {username && (
-            <Typography variant="subtitle1" sx={{ mt: 1 }}>
-              Para el usuario: {username}
-            </Typography>
+          
+          {success ? (
+            <Alert severity="success" sx={{ mt: 2, width: '100%' }}>
+              ¡Contraseña cambiada con éxito! Redirigiendo...
+            </Alert>
+          ) : (
+            <Box sx={{ width: '100%', mt: 2 }}>
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
+              
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="newPassword"
+                label="Nueva Contraseña"
+                type={showPassword ? 'text' : 'password'}
+                id="newPassword"
+                autoFocus
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleClickShowPassword}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              
+              {newPassword && (
+                <Box sx={{ mt: 1, mb: 2 }}>
+                  <Typography variant="body2" gutterBottom>
+                    Fortaleza de la contraseña:
+                  </Typography>
+                  <LinearProgress
+                    variant="determinate"
+                    value={passwordStrength}
+                    color={
+                      passwordStrength < 40 ? 'error' :
+                      passwordStrength < 70 ? 'warning' : 'success'
+                    }
+                    sx={{ height: 8, borderRadius: 5 }}
+                  />
+                </Box>
+              )}
+              
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="confirmPassword"
+                label="Confirmar Contraseña"
+                type={showPassword ? 'text' : 'password'}
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              
+              <Box sx={{ mt: 3 }}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={handleResetPassword}
+                  sx={{ mb: 2 }}
+                  disabled={!newPassword || !confirmPassword}
+                >
+                  Cambiar Contraseña
+                </Button>
+                
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={() => navigate('/dashboard')}
+                >
+                  Cancelar
+                </Button>
+              </Box>
+            </Box>
           )}
-          
-          <Stepper activeStep={activeStep} sx={{ width: '100%', mt: 3 }}>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-          
-          {getStepContent(activeStep)}
-          
-          <Button
-            fullWidth
-            variant="text"
-            onClick={() => navigate('/login')}
-            sx={{ mt: 1 }}
-          >
-            Volver a Iniciar Sesión
-          </Button>
         </Paper>
       </Box>
     </Container>

@@ -112,11 +112,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Función para cambiar contraseña
-  const changePassword = async (currentPassword, newPassword) => {
+  const changePassword = async (newPassword) => {
     setLoading(true);
     setError(null);
     try {
-      return await authService.changePassword(currentPassword, newPassword);
+      return await authService.changePassword(newPassword);
     } catch (err) {
       setError(err.message || 'Error al cambiar contraseña');
       throw err;
